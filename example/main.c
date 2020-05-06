@@ -3,5 +3,8 @@
 
 int main(void)
 {
-    hello();
+    myvk_ctx * ctx = myvk_init();
+    printf("myvk initialized\n");
+    myvk_free(ctx);
+    printf("myvk freed\n");
 }

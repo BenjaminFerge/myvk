@@ -3,6 +3,11 @@
 
 #include <vulkan/vulkan.h>
 
-void hello(void);
+typedef struct myvk_ctx {
+} myvk_ctx;
+
+myvk_ctx *myvk_init();
+
+void myvk_free(myvk_ctx *ctx);
 
 #endif //MYVK_MYVK_H
