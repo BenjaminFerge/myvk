@@ -31,5 +31,7 @@ void myvk_end(myvk_ctx* ctx)
 
 void myvk_free(myvk_ctx* ctx)
 {
+    glfwDestroyWindow(ctx->window);
+    glfwTerminate();
     free(ctx);
 }
