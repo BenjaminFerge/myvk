@@ -37,4 +37,6 @@ void create_inst(myvk_ctx* ctx);
 
 void init_window(myvk_ctx* ctx);
 
+void init_vulkan(myvk_ctx* ctx);
+
 #endif // MYVK_MYVK_H

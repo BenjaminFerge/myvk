@@ -121,6 +121,12 @@ void init_window(myvk_ctx* ctx)
     ctx->window = glfwCreateWindow(800, 600, "myvk", NULL, NULL);
 }
 
+void init_vulkan(myvk_ctx* ctx)
+{
+    create_inst(ctx);
+    setup_debug_messenger(ctx);
+}
+
 myvk_ctx* myvk_init()
 {
     myvk_ctx* ctx = malloc(sizeof(myvk_ctx));
@@ -139,8 +145,7 @@ myvk_ctx* myvk_init()
 #endif
 
     init_window(ctx);
-    create_inst(ctx);
-    setup_debug_messenger(ctx);
+    init_vulkan(ctx);
     return ctx;
 }
 
