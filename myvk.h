@@ -10,6 +10,7 @@ typedef struct myvk_ctx {
     bool exit;
     bool debug;
     VkInstance inst;
+    VkDebugUtilsMessengerEXT messenger;
     const char** layerv;
     int layerc;
     uint32_t extc;

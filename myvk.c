@@ -3,6 +3,101 @@
 #include <stdlib.h>
 #include <string.h>
 
+VkResult
+create_debug_messenger(VkInstance instance,
+                       const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
+                       const VkAllocationCallbacks* pAllocator,
+                       VkDebugUtilsMessengerEXT* pDebugMessenger)
+{
+    PFN_vkCreateDebugUtilsMessengerEXT func =
+        (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
+            instance, "vkCreateDebugUtilsMessengerEXT");
+    if (func != NULL) {
+        return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
+    } else {
+        return VK_ERROR_EXTENSION_NOT_PRESENT;
+    }
+}
+
+void destroy_debug_messenger(VkInstance instance,
+                             VkDebugUtilsMessengerEXT debugMessenger,
+                             const VkAllocationCallbacks* pAllocator)
+{
+    PFN_vkDestroyDebugUtilsMessengerEXT func =
+        (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
+            instance, "vkDestroyDebugUtilsMessengerEXT");
+    if (func != NULL) {
+        func(instance, debugMessenger, pAllocator);
+    }
+}
+
+const char* message_type_str(VkDebugUtilsMessageTypeFlagBitsEXT type)
+{
+    switch (type) {
+    case VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT:
+        return "GENERAL";
+    case VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT:
+        return "PERFORMANCE";
+    case VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT:
+        return "VALIDATION";
+    default:
+        return "UNKNOWN";
+    }
+}
+
+const char*
+message_severity_str(VkDebugUtilsMessageSeverityFlagBitsEXT severity)
+{
+    switch (severity) {
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
+        return "ERROR";
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
+        return "WARNING";
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
+        return "INFO";
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
+        return "VERBOSE";
+    default:
+        return "UNKNOWN";
+    }
+}
+
+static VKAPI_ATTR VkBool32 VKAPI_CALL
+debugcb(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+        VkDebugUtilsMessageTypeFlagsEXT messageType,
+        const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+        void* pUserData)
+{
+    printf("[%s] %s: %s\n",
+           message_severity_str(messageSeverity),
+           message_type_str(messageType),
+           pCallbackData->pMessage);
+
+    return VK_FALSE;
+}
+
+void setup_debug_messenger(myvk_ctx* ctx)
+{
+    if (!ctx->debug)
+        return;
+    VkDebugUtilsMessengerCreateInfoEXT create;
+    create.flags = 0;
+    create.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+    create.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+                             VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+                             VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    create.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+                         VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+                         VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+    create.pfnUserCallback = debugcb;
+    create.pUserData = ctx;
+
+    if (create_debug_messenger(ctx->inst, &create, NULL, &ctx->messenger) !=
+        VK_SUCCESS) {
+        fprintf(stderr, "Failed to set up debug messenger!\n");
+    }
+}
+
 VkLayerProperties* available_layers(uint32_t* count)
 {
     uint32_t layerc = 0;
@@ -159,6 +254,7 @@ myvk_ctx* myvk_init()
 
     init_window(ctx);
     create_inst(ctx);
+    setup_debug_messenger(ctx);
     return ctx;
 }
 
@@ -176,6 +272,8 @@ void myvk_end(myvk_ctx* ctx)
 
 void myvk_free(myvk_ctx* ctx)
 {
+    if (ctx->debug)
+        destroy_debug_messenger(ctx->inst, ctx->messenger, NULL);
     vkDestroyInstance(ctx->inst, NULL);
     glfwDestroyWindow(ctx->window);
     glfwTerminate();
