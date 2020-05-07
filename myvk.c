@@ -3,14 +3,73 @@
 #include <stdlib.h>
 #include <string.h>
 
+VkLayerProperties* available_layers(uint32_t* count)
+{
+    uint32_t layerc = 0;
+    vkEnumerateInstanceLayerProperties(&layerc, NULL);
+
+    VkLayerProperties* layerv = malloc(layerc * sizeof(VkLayerProperties));
+    vkEnumerateInstanceLayerProperties(&layerc, layerv);
+
+    *count = layerc;
+    return layerv;
+}
+
+const char**
+not_found_layers(const char** layers, uint32_t layerc, uint32_t* count)
+{
+    uint32_t c = 0;
+    VkLayerProperties* all = available_layers(&c);
+    int nfoundc = 0;
+    const char** nfoundv = malloc(1);
+    for (int i = 0; i < layerc; ++i) {
+        const char* name = layers[i];
+        bool found = false;
+        for (int j = 0; j < c; ++j) {
+            VkLayerProperties p = all[j];
+            if (strcmp(name, p.layerName) == 0) {
+                found = true;
+            }
+        }
+        if (!found) {
+            nfoundv = realloc(nfoundv, (++nfoundc) * sizeof(*nfoundv));
+            if (!nfoundv) {
+                fprintf(stderr,
+                        "Realloc failed because memory could not be allocated");
+                exit(1);
+            }
+            nfoundv[nfoundc - 1] = name;
+        }
+    }
+    *count = nfoundc;
+    return nfoundv;
+}
+
 void enable_layers(myvk_ctx* ctx, VkInstanceCreateInfo* create)
 {
     if (!ctx->debug) {
         create->enabledLayerCount = 0;
         return;
     }
+    uint32_t availablec = 0;
+    VkLayerProperties* availablev = available_layers(&availablec);
+    printf("Avalable layers (%d):\n", availablec);
+
+    for (int j = 0; j < availablec; ++j) {
+        printf("\t%d. %s\n", j + 1, availablev[j]);
+    }
+
     for (int i = 0; i < ctx->layerc; ++i) {
         printf("Layers[%d]: %s\n", i, ctx->layerv[i]);
+    }
+
+    uint32_t nfoundc = 0;
+    const char** nfoundv = not_found_layers(ctx->layerv, ctx->layerc, &nfoundc);
+    for (int k = 0; k < nfoundc; ++k) {
+        fprintf(stderr, "Layer not found [%d]: %s\n", k, nfoundv[k]);
+    }
+    if (nfoundc) {
+        exit(0);
     }
     create->enabledLayerCount = ctx->layerc;
     create->ppEnabledLayerNames = ctx->layerv;
