@@ -3,14 +3,49 @@
 #include <stdlib.h>
 #include <string.h>
 
-void validation(myvk_ctx* ctx, VkInstanceCreateInfo* create)
+void enable_layers(myvk_ctx* ctx, VkInstanceCreateInfo* create)
 {
     if (!ctx->debug) {
         create->enabledLayerCount = 0;
         return;
     }
+    for (int i = 0; i < ctx->layerc; ++i) {
+        printf("Layers[%d]: %s\n", i, ctx->layerv[i]);
+    }
     create->enabledLayerCount = ctx->layerc;
     create->ppEnabledLayerNames = ctx->layerv;
+}
+
+void add_ext(myvk_ctx* ctx, const char* name)
+{
+    ctx->extv = realloc(ctx->extv, (++ctx->extc) * sizeof(*ctx->extv));
+    if (!ctx->extv) {
+        fprintf(stderr, "Realloc failed because memory could not be allocated");
+        exit(1);
+    }
+    ctx->extv[ctx->extc - 1] = malloc(strlen(name) * sizeof(char*));
+    ctx->extv[ctx->extc - 1] = name;
+}
+
+void enable_extensions(myvk_ctx* ctx, VkInstanceCreateInfo* create)
+{
+    uint32_t glfw_extc = 0;
+    const char** glfw_extv = glfwGetRequiredInstanceExtensions(&glfw_extc);
+    ctx->extv = malloc(glfw_extc * sizeof(*glfw_extv));
+    for (int i = 0; i < glfw_extc; ++i) {
+        ctx->extv[i] = glfw_extv[i];
+    }
+    ctx->extc = glfw_extc;
+
+    if (ctx->debug) {
+        add_ext(ctx, VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+
+        for (int i = 0; i < ctx->extc; ++i) {
+            printf("Extensions[%d]: %s\n", i, ctx->extv[i]);
+        }
+    }
+    create->enabledExtensionCount = ctx->extc;
+    create->ppEnabledExtensionNames = ctx->extv;
 }
 
 void create_inst(myvk_ctx* ctx)
@@ -26,13 +61,9 @@ void create_inst(myvk_ctx* ctx)
     VkInstanceCreateInfo create;
     create.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     create.pApplicationInfo = &app;
-    validation(ctx, &create);
 
-    uint32_t extc = 0;
-    const char** exts;
-    exts = glfwGetRequiredInstanceExtensions(&extc);
-    create.enabledExtensionCount = extc;
-    create.ppEnabledExtensionNames = exts;
+    enable_layers(ctx, &create);
+    enable_extensions(ctx, &create);
 
     VkResult result = vkCreateInstance(&create, NULL, &ctx->inst);
 

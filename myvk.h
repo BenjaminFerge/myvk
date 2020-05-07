@@ -10,8 +10,10 @@ typedef struct myvk_ctx {
     bool exit;
     bool debug;
     VkInstance inst;
-    char** layerv;
+    const char** layerv;
     int layerc;
+    uint32_t extc;
+    const char** extv;
 } myvk_ctx;
 
 myvk_ctx* myvk_init();
