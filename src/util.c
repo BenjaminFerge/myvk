@@ -4,10 +4,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-VkResult create_debug_messenger(VkInstance instance,
-                                VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-                                VkAllocationCallbacks* pAllocator,
-                                VkDebugUtilsMessengerEXT* pDebugMessenger)
+VkResult
+myvk_create_debug_messenger(VkInstance instance,
+                            VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
+                            VkAllocationCallbacks* pAllocator,
+                            VkDebugUtilsMessengerEXT* pDebugMessenger)
 {
     PFN_vkCreateDebugUtilsMessengerEXT func =
         (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
@@ -19,9 +20,9 @@ VkResult create_debug_messenger(VkInstance instance,
     }
 }
 
-void destroy_debug_messenger(VkInstance instance,
-                             VkDebugUtilsMessengerEXT debugMessenger,
-                             VkAllocationCallbacks* pAllocator)
+void myvk_destroy_debug_messenger(VkInstance instance,
+                                  VkDebugUtilsMessengerEXT debugMessenger,
+                                  VkAllocationCallbacks* pAllocator)
 {
     PFN_vkDestroyDebugUtilsMessengerEXT func =
         (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
@@ -31,7 +32,7 @@ void destroy_debug_messenger(VkInstance instance,
     }
 }
 
-const char* message_type_str(VkDebugUtilsMessageTypeFlagBitsEXT type)
+const char* myvk_message_type_str(VkDebugUtilsMessageTypeFlagBitsEXT type)
 {
     switch (type) {
     case VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT:
@@ -46,7 +47,7 @@ const char* message_type_str(VkDebugUtilsMessageTypeFlagBitsEXT type)
 }
 
 const char*
-message_severity_str(VkDebugUtilsMessageSeverityFlagBitsEXT severity)
+myvk_message_severity_str(VkDebugUtilsMessageSeverityFlagBitsEXT severity)
 {
     switch (severity) {
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
@@ -63,20 +64,20 @@ message_severity_str(VkDebugUtilsMessageSeverityFlagBitsEXT severity)
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL
-debugcb(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-        VkDebugUtilsMessageTypeFlagsEXT messageType,
-        VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-        void* pUserData)
+myvk_debugcb(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+             VkDebugUtilsMessageTypeFlagsEXT messageType,
+             VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+             void* pUserData)
 {
     printf("[%s] %s: %s\n",
-           message_severity_str(messageSeverity),
-           message_type_str(messageType),
+           myvk_message_severity_str(messageSeverity),
+           myvk_message_type_str(messageType),
            pCallbackData->pMessage);
 
     return VK_FALSE;
 }
 
-VkLayerProperties* available_layers(uint32_t* count)
+VkLayerProperties* myvk_available_layers(uint32_t* count)
 {
     uint32_t layerc = 0;
     vkEnumerateInstanceLayerProperties(&layerc, NULL);
@@ -89,10 +90,10 @@ VkLayerProperties* available_layers(uint32_t* count)
 }
 
 const char**
-not_found_layers(const char** layers, uint32_t layerc, uint32_t* count)
+myvk_not_found_layers(const char** layers, uint32_t layerc, uint32_t* count)
 {
     uint32_t c = 0;
-    VkLayerProperties* all = available_layers(&c);
+    VkLayerProperties* all = myvk_available_layers(&c);
     int nfoundc = 0;
     const char** nfoundv = malloc(1);
     for (int i = 0; i < layerc; ++i) {
@@ -118,7 +119,7 @@ not_found_layers(const char** layers, uint32_t layerc, uint32_t* count)
     return nfoundv;
 }
 
-bool device_suitable(VkPhysicalDevice device)
+bool myvk_device_suitable(VkPhysicalDevice device)
 {
     VkPhysicalDeviceProperties props;
     VkPhysicalDeviceFeatures features;
@@ -136,7 +137,8 @@ bool device_suitable(VkPhysicalDevice device)
     return type_ok && features.geometryShader;
 }
 
-VkPhysicalDevice* available_phyiscal_devices(VkInstance inst, uint32_t* count)
+VkPhysicalDevice* myvk_available_phyiscal_devices(VkInstance inst,
+                                                  uint32_t* count)
 {
     uint32_t gpuc = 0;
     vkEnumeratePhysicalDevices(inst, &gpuc, NULL);
@@ -150,7 +152,7 @@ VkPhysicalDevice* available_phyiscal_devices(VkInstance inst, uint32_t* count)
     return gpuv;
 }
 
-const char* physical_device_type_str(VkPhysicalDeviceType type)
+const char* myvk_physical_device_type_str(VkPhysicalDeviceType type)
 {
     switch (type) {
     case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
@@ -172,7 +174,7 @@ const char* physical_device_type_str(VkPhysicalDeviceType type)
     }
 }
 
-void print_physical_device(VkPhysicalDevice gpu)
+void myvk_print_physical_device(VkPhysicalDevice gpu)
 {
     VkPhysicalDeviceProperties props;
     vkGetPhysicalDeviceProperties(gpu, &props);
@@ -183,10 +185,10 @@ void print_physical_device(VkPhysicalDevice gpu)
            "\tType: %s\n",
            props.deviceName,
            props.deviceID,
-           physical_device_type_str(props.deviceType));
+           myvk_physical_device_type_str(props.deviceType));
 }
 
-int prefer_discrete_gpu(int gpuc, VkPhysicalDevice* gpuv)
+int myvk_prefer_discrete_gpu(int gpuc, VkPhysicalDevice* gpuv)
 {
     int idx = -1;
     for (int i = 0; i < gpuc; ++i) {
@@ -196,7 +198,7 @@ int prefer_discrete_gpu(int gpuc, VkPhysicalDevice* gpuv)
         vkGetPhysicalDeviceProperties(gpu, &props);
         vkGetPhysicalDeviceFeatures(gpu, &features);
 
-        if (!device_suitable(gpu)) {
+        if (!myvk_device_suitable(gpu)) {
             return -1;
         }
         if (props.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {

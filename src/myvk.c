@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-void setup_debug_messenger(myvk_ctx* ctx)
+void myvk_setup_debug_messenger(myvk_ctx* ctx)
 {
     if (!ctx->debug)
         return;
@@ -17,23 +17,23 @@ void setup_debug_messenger(myvk_ctx* ctx)
     create.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
                          VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
                          VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-    create.pfnUserCallback = debugcb;
+    create.pfnUserCallback = myvk_debugcb;
     create.pUserData = ctx;
 
-    if (create_debug_messenger(ctx->inst, &create, NULL, &ctx->messenger) !=
-        VK_SUCCESS) {
+    if (myvk_create_debug_messenger(
+            ctx->inst, &create, NULL, &ctx->messenger) != VK_SUCCESS) {
         fprintf(stderr, "Failed to set up debug messenger!\n");
     }
 }
 
-void enable_layers(myvk_ctx* ctx, VkInstanceCreateInfo* create)
+void myvk_enable_layers(myvk_ctx* ctx, VkInstanceCreateInfo* create)
 {
     if (!ctx->debug) {
         create->enabledLayerCount = 0;
         return;
     }
     uint32_t availablec = 0;
-    VkLayerProperties* availablev = available_layers(&availablec);
+    VkLayerProperties* availablev = myvk_available_layers(&availablec);
     printf("Avalable layers (%d):\n", availablec);
 
     for (int j = 0; j < availablec; ++j) {
@@ -45,7 +45,8 @@ void enable_layers(myvk_ctx* ctx, VkInstanceCreateInfo* create)
     }
 
     uint32_t nfoundc = 0;
-    const char** nfoundv = not_found_layers(ctx->layerv, ctx->layerc, &nfoundc);
+    const char** nfoundv =
+        myvk_not_found_layers(ctx->layerv, ctx->layerc, &nfoundc);
     for (int k = 0; k < nfoundc; ++k) {
         fprintf(stderr, "Layer not found [%d]: %s\n", k, nfoundv[k]);
     }
@@ -56,7 +57,7 @@ void enable_layers(myvk_ctx* ctx, VkInstanceCreateInfo* create)
     create->ppEnabledLayerNames = ctx->layerv;
 }
 
-void add_ext(myvk_ctx* ctx, const char* name)
+void myvk_add_ext(myvk_ctx* ctx, const char* name)
 {
     ctx->extv = realloc(ctx->extv, (++ctx->extc) * sizeof(*ctx->extv));
     if (!ctx->extv) {
@@ -67,7 +68,7 @@ void add_ext(myvk_ctx* ctx, const char* name)
     ctx->extv[ctx->extc - 1] = name;
 }
 
-void enable_extensions(myvk_ctx* ctx, VkInstanceCreateInfo* create)
+void myvk_enable_extensions(myvk_ctx* ctx, VkInstanceCreateInfo* create)
 {
     uint32_t glfw_extc = 0;
     const char** glfw_extv = glfwGetRequiredInstanceExtensions(&glfw_extc);
@@ -78,7 +79,7 @@ void enable_extensions(myvk_ctx* ctx, VkInstanceCreateInfo* create)
     ctx->extc = glfw_extc;
 
     if (ctx->debug) {
-        add_ext(ctx, VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        myvk_add_ext(ctx, VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
         for (int i = 0; i < ctx->extc; ++i) {
             printf("Extensions[%d]: %s\n", i, ctx->extv[i]);
@@ -88,7 +89,7 @@ void enable_extensions(myvk_ctx* ctx, VkInstanceCreateInfo* create)
     create->ppEnabledExtensionNames = ctx->extv;
 }
 
-void create_inst(myvk_ctx* ctx)
+void myvk_create_inst(myvk_ctx* ctx)
 {
     VkApplicationInfo app;
     app.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -102,8 +103,8 @@ void create_inst(myvk_ctx* ctx)
     create.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     create.pApplicationInfo = &app;
 
-    enable_layers(ctx, &create);
-    enable_extensions(ctx, &create);
+    myvk_enable_layers(ctx, &create);
+    myvk_enable_extensions(ctx, &create);
 
     VkResult result = vkCreateInstance(&create, NULL, &ctx->inst);
 
@@ -113,7 +114,7 @@ void create_inst(myvk_ctx* ctx)
     }
 }
 
-void init_window(myvk_ctx* ctx)
+void myvk_init_window(myvk_ctx* ctx)
 {
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -121,11 +122,11 @@ void init_window(myvk_ctx* ctx)
     ctx->window = glfwCreateWindow(800, 600, "myvk", NULL, NULL);
 }
 
-void init_vulkan(myvk_ctx* ctx)
+void myvk_init_vulkan(myvk_ctx* ctx)
 {
-    create_inst(ctx);
-    setup_debug_messenger(ctx);
-    pick_physical_device(ctx);
+    myvk_create_inst(ctx);
+    myvk_setup_debug_messenger(ctx);
+    myvk_pick_physical_device(ctx);
 }
 
 myvk_ctx* myvk_init()
@@ -145,10 +146,10 @@ myvk_ctx* myvk_init()
     ctx->debug = false;
 #endif
 
-    init_window(ctx);
+    myvk_init_window(ctx);
 
     ctx->physical_device = VK_NULL_HANDLE;
-    init_vulkan(ctx);
+    myvk_init_vulkan(ctx);
     return ctx;
 }
 
@@ -167,24 +168,24 @@ void myvk_end(myvk_ctx* ctx)
 void myvk_free(myvk_ctx* ctx)
 {
     if (ctx->debug)
-        destroy_debug_messenger(ctx->inst, ctx->messenger, NULL);
+        myvk_destroy_debug_messenger(ctx->inst, ctx->messenger, NULL);
     vkDestroyInstance(ctx->inst, NULL);
     glfwDestroyWindow(ctx->window);
     glfwTerminate();
     free(ctx);
 }
 
-void pick_physical_device(myvk_ctx* ctx)
+void myvk_pick_physical_device(myvk_ctx* ctx)
 {
     uint32_t dc = 0;
-    VkPhysicalDevice* dv = available_phyiscal_devices(ctx->inst, &dc);
-    int idx = prefer_discrete_gpu(dc, dv);
+    VkPhysicalDevice* dv = myvk_available_phyiscal_devices(ctx->inst, &dc);
+    int idx = myvk_prefer_discrete_gpu(dc, dv);
     if (idx != -1) {
         VkPhysicalDevice gpu = dv[idx];
         ctx->physical_device = gpu;
         if (ctx->debug) {
             printf("Selected GPU:\n");
-            print_physical_device(gpu);
+            myvk_print_physical_device(gpu);
         }
     }
 

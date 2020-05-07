@@ -26,20 +26,20 @@ void myvk_begin(myvk_ctx* ctx);
 
 void myvk_end(myvk_ctx* ctx);
 
-void setup_debug_messenger(myvk_ctx* ctx);
+void myvk_setup_debug_messenger(myvk_ctx* ctx);
 
-void enable_layers(myvk_ctx* ctx, VkInstanceCreateInfo* create);
+void myvk_enable_layers(myvk_ctx* ctx, VkInstanceCreateInfo* create);
 
-void add_ext(myvk_ctx* ctx, const char* name);
+void myvk_add_ext(myvk_ctx* ctx, const char* name);
 
-void enable_extensions(myvk_ctx* ctx, VkInstanceCreateInfo* create);
+void myvk_enable_extensions(myvk_ctx* ctx, VkInstanceCreateInfo* create);
 
-void create_inst(myvk_ctx* ctx);
+void myvk_create_inst(myvk_ctx* ctx);
 
-void init_window(myvk_ctx* ctx);
+void myvk_init_window(myvk_ctx* ctx);
 
-void init_vulkan(myvk_ctx* ctx);
+void myvk_init_vulkan(myvk_ctx* ctx);
 
-void pick_physical_device(myvk_ctx* ctx);
+void myvk_pick_physical_device(myvk_ctx* ctx);
 
 #endif // MYVK_MYVK_H
