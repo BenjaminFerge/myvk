@@ -8,7 +8,10 @@
 typedef struct myvk_ctx {
     GLFWwindow* window;
     bool exit;
+    bool debug;
     VkInstance inst;
+    char** layerv;
+    int layerc;
 } myvk_ctx;
 
 myvk_ctx* myvk_init();

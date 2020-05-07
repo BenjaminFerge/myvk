@@ -1,6 +1,17 @@
 #include "myvk.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+void validation(myvk_ctx* ctx, VkInstanceCreateInfo* create)
+{
+    if (!ctx->debug) {
+        create->enabledLayerCount = 0;
+        return;
+    }
+    create->enabledLayerCount = ctx->layerc;
+    create->ppEnabledLayerNames = ctx->layerv;
+}
 
 void create_inst(myvk_ctx* ctx)
 {
@@ -15,13 +26,13 @@ void create_inst(myvk_ctx* ctx)
     VkInstanceCreateInfo create;
     create.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     create.pApplicationInfo = &app;
+    validation(ctx, &create);
 
     uint32_t extc = 0;
     const char** exts;
     exts = glfwGetRequiredInstanceExtensions(&extc);
     create.enabledExtensionCount = extc;
     create.ppEnabledExtensionNames = exts;
-    create.enabledLayerCount = 0;
 
     VkResult result = vkCreateInstance(&create, NULL, &ctx->inst);
 
@@ -43,6 +54,19 @@ myvk_ctx* myvk_init()
 {
     myvk_ctx* ctx = malloc(sizeof(myvk_ctx));
     ctx->exit = false;
+    ctx->layerc = 1;
+    ctx->layerv = malloc(ctx->layerc * sizeof(char*));
+
+    const char* layer1 = "VK_LAYER_KHRONOS_validation";
+    ctx->layerv[0] = malloc(strlen(layer1) * sizeof(char));
+    strcpy(ctx->layerv[0], layer1);
+
+#ifndef NDEBUG
+    ctx->debug = true;
+#else
+    ctx->debug = false;
+#endif
+
     init_window(ctx);
     create_inst(ctx);
     return ctx;
