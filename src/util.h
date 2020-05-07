@@ -4,6 +4,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include "myvk.h"
 #include <stdbool.h>
 
 VkResult
@@ -36,6 +37,8 @@ int myvk_prefer_discrete_gpu(int gpuc, VkPhysicalDevice* gpuv);
 const char* myvk_physical_device_type_str(VkPhysicalDeviceType type);
 
 void myvk_print_physical_device(VkPhysicalDevice gpu);
+
+myvk_qfamilies find_qfamilies(VkPhysicalDevice gpu);
 
 VKAPI_ATTR VkBool32 VKAPI_CALL
 myvk_debugcb(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,

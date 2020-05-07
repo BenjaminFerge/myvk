@@ -134,7 +134,8 @@ bool myvk_device_suitable(VkPhysicalDevice device)
               VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
 #endif
 
-    return type_ok && features.geometryShader;
+    myvk_qfamilies families = find_qfamilies(device);
+    return type_ok && features.geometryShader && families.has_gfx;
 }
 
 VkPhysicalDevice* myvk_available_phyiscal_devices(VkInstance inst,
@@ -207,4 +208,27 @@ int myvk_prefer_discrete_gpu(int gpuc, VkPhysicalDevice* gpuv)
         idx = i;
     }
     return idx;
+}
+
+myvk_qfamilies find_qfamilies(VkPhysicalDevice gpu)
+{
+    myvk_qfamilies families;
+    families.has_gfx = false;
+
+    uint32_t count = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(gpu, &count, NULL);
+
+    VkQueueFamilyProperties props[count];
+    vkGetPhysicalDeviceQueueFamilyProperties(gpu, &count, props);
+
+    int i = 0;
+    for (i = 0; i < count; ++i) {
+        if (props[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            families.gfx = i;
+            families.has_gfx = true;
+            break;
+        }
+    }
+
+    return families;
 }

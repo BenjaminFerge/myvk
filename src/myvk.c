@@ -149,6 +149,7 @@ myvk_ctx* myvk_init()
     myvk_init_window(ctx);
 
     ctx->physical_device = VK_NULL_HANDLE;
+    ctx->queues.has_gfx = false;
     myvk_init_vulkan(ctx);
     return ctx;
 }

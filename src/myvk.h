@@ -5,6 +5,11 @@
 #include <GLFW/glfw3.h>
 #include <stdbool.h>
 
+typedef struct myvk_qfamilies {
+    uint32_t gfx;
+    bool has_gfx;
+} myvk_qfamilies;
+
 typedef struct myvk_ctx {
     GLFWwindow* window;
     bool exit;
@@ -16,6 +21,7 @@ typedef struct myvk_ctx {
     uint32_t extc;
     const char** extv;
     VkPhysicalDevice physical_device;
+    myvk_qfamilies queues;
 } myvk_ctx;
 
 myvk_ctx* myvk_init();
