@@ -4,6 +4,8 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include <stdbool.h>
+
 VkResult create_debug_messenger(VkInstance instance,
                                 VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
                                 VkAllocationCallbacks* pAllocator,
@@ -22,6 +24,16 @@ const char**
 not_found_layers(const char** layers, uint32_t layerc, uint32_t* count);
 
 VkLayerProperties* available_layers(uint32_t* count);
+
+bool device_suitable(VkPhysicalDevice device);
+
+VkPhysicalDevice* available_phyiscal_devices(VkInstance inst, uint32_t* count);
+
+int prefer_discrete_gpu(int gpuc, VkPhysicalDevice* gpuv);
+
+const char* physical_device_type_str(VkPhysicalDeviceType type);
+
+void print_physical_device(VkPhysicalDevice gpu);
 
 VKAPI_ATTR VkBool32 VKAPI_CALL
 debugcb(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,

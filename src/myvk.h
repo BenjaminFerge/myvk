@@ -15,6 +15,7 @@ typedef struct myvk_ctx {
     int layerc;
     uint32_t extc;
     const char** extv;
+    VkPhysicalDevice physical_device;
 } myvk_ctx;
 
 myvk_ctx* myvk_init();
@@ -38,5 +39,7 @@ void create_inst(myvk_ctx* ctx);
 void init_window(myvk_ctx* ctx);
 
 void init_vulkan(myvk_ctx* ctx);
+
+void pick_physical_device(myvk_ctx* ctx);
 
 #endif // MYVK_MYVK_H

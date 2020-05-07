@@ -1,7 +1,7 @@
 #include "util.h"
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
 #include <string.h>
 
 VkResult create_debug_messenger(VkInstance instance,
@@ -116,4 +116,93 @@ not_found_layers(const char** layers, uint32_t layerc, uint32_t* count)
     }
     *count = nfoundc;
     return nfoundv;
+}
+
+bool device_suitable(VkPhysicalDevice device)
+{
+    VkPhysicalDeviceProperties props;
+    VkPhysicalDeviceFeatures features;
+    vkGetPhysicalDeviceProperties(device, &props);
+    vkGetPhysicalDeviceFeatures(device, &features);
+
+    bool type_ok = false;
+#ifdef MYVK_ONLY_DISCRETE_GPU
+    type_ok = props.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
+#else
+    type_ok = props.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU ||
+              VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
+#endif
+
+    return type_ok && features.geometryShader;
+}
+
+VkPhysicalDevice* available_phyiscal_devices(VkInstance inst, uint32_t* count)
+{
+    uint32_t gpuc = 0;
+    vkEnumeratePhysicalDevices(inst, &gpuc, NULL);
+    if (gpuc == 0) {
+        fprintf(stderr, "Failed to find a GPU with Vulkan support!");
+        exit(0);
+    }
+    VkPhysicalDevice* gpuv = malloc(gpuc * sizeof(VkPhysicalDevice));
+    vkEnumeratePhysicalDevices(inst, &gpuc, gpuv);
+    *count = gpuc;
+    return gpuv;
+}
+
+const char* physical_device_type_str(VkPhysicalDeviceType type)
+{
+    switch (type) {
+    case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
+        return "INTEGRATED";
+    case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
+        return "DISCRETE";
+    case VK_PHYSICAL_DEVICE_TYPE_CPU:
+        return "CPU";
+    case VK_PHYSICAL_DEVICE_TYPE_MAX_ENUM:
+        return "MAX_ENUM";
+    case VK_PHYSICAL_DEVICE_TYPE_OTHER:
+        return "OTHER";
+    case VK_PHYSICAL_DEVICE_TYPE_RANGE_SIZE:
+        return "RANGE_SIZE";
+    case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU:
+        return "VIRTUAL_GPU";
+    default:
+        return "UNKNOWN";
+    }
+}
+
+void print_physical_device(VkPhysicalDevice gpu)
+{
+    VkPhysicalDeviceProperties props;
+    vkGetPhysicalDeviceProperties(gpu, &props);
+    VkPhysicalDeviceFeatures features;
+    vkGetPhysicalDeviceFeatures(gpu, &features);
+    printf("%s\n"
+           "\tID:   %d\n"
+           "\tType: %s\n",
+           props.deviceName,
+           props.deviceID,
+           physical_device_type_str(props.deviceType));
+}
+
+int prefer_discrete_gpu(int gpuc, VkPhysicalDevice* gpuv)
+{
+    int idx = -1;
+    for (int i = 0; i < gpuc; ++i) {
+        VkPhysicalDevice gpu = gpuv[i];
+        VkPhysicalDeviceProperties props;
+        VkPhysicalDeviceFeatures features;
+        vkGetPhysicalDeviceProperties(gpu, &props);
+        vkGetPhysicalDeviceFeatures(gpu, &features);
+
+        if (!device_suitable(gpu)) {
+            return -1;
+        }
+        if (props.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+            return i;
+        }
+        idx = i;
+    }
+    return idx;
 }

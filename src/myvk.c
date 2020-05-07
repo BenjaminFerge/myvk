@@ -125,6 +125,7 @@ void init_vulkan(myvk_ctx* ctx)
 {
     create_inst(ctx);
     setup_debug_messenger(ctx);
+    pick_physical_device(ctx);
 }
 
 myvk_ctx* myvk_init()
@@ -145,6 +146,8 @@ myvk_ctx* myvk_init()
 #endif
 
     init_window(ctx);
+
+    ctx->physical_device = VK_NULL_HANDLE;
     init_vulkan(ctx);
     return ctx;
 }
@@ -169,4 +172,24 @@ void myvk_free(myvk_ctx* ctx)
     glfwDestroyWindow(ctx->window);
     glfwTerminate();
     free(ctx);
+}
+
+void pick_physical_device(myvk_ctx* ctx)
+{
+    uint32_t dc = 0;
+    VkPhysicalDevice* dv = available_phyiscal_devices(ctx->inst, &dc);
+    int idx = prefer_discrete_gpu(dc, dv);
+    if (idx != -1) {
+        VkPhysicalDevice gpu = dv[idx];
+        ctx->physical_device = gpu;
+        if (ctx->debug) {
+            printf("Selected GPU:\n");
+            print_physical_device(gpu);
+        }
+    }
+
+    if (ctx->physical_device == VK_NULL_HANDLE) {
+        fprintf(stderr, "Failed to find any suitable GPU!");
+        exit(0);
+    }
 }
