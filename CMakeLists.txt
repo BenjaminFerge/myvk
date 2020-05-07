@@ -6,7 +6,7 @@ set(CMAKE_C_STANDARD 11)
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup()
 
-add_library(myvk myvk.c myvk.h)
+add_library(myvk src/myvk.c src/myvk.h src/util.c src/util.h)
 
 add_subdirectory(example)
 
