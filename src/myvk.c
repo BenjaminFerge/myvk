@@ -127,6 +127,7 @@ void myvk_init_vulkan(myvk_ctx* ctx)
     myvk_create_inst(ctx);
     myvk_setup_debug_messenger(ctx);
     myvk_pick_physical_device(ctx);
+    myvk_create_logical_device(ctx);
 }
 
 myvk_ctx* myvk_init()
@@ -168,6 +169,7 @@ void myvk_end(myvk_ctx* ctx)
 
 void myvk_free(myvk_ctx* ctx)
 {
+    vkDestroyDevice(ctx->device, NULL);
     if (ctx->debug)
         myvk_destroy_debug_messenger(ctx->inst, ctx->messenger, NULL);
     vkDestroyInstance(ctx->inst, NULL);
@@ -194,4 +196,42 @@ void myvk_pick_physical_device(myvk_ctx* ctx)
         fprintf(stderr, "Failed to find any suitable GPU!");
         exit(0);
     }
+}
+
+void myvk_create_logical_device(myvk_ctx* ctx)
+{
+    myvk_qfamilies indices = find_qfamilies(ctx->physical_device);
+
+    VkDeviceQueueCreateInfo qinfo = {};
+    qinfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    qinfo.queueFamilyIndex = indices.gfx;
+    qinfo.queueCount = 1;
+    float prio = 1.0f;
+    qinfo.pQueuePriorities = &prio;
+
+    VkDeviceCreateInfo device_info = {};
+    VkPhysicalDeviceFeatures features = {};
+    device_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    device_info.pQueueCreateInfos = &qinfo;
+    device_info.queueCreateInfoCount = 1;
+    device_info.pEnabledFeatures = &features;
+    device_info.enabledExtensionCount = 0;
+
+    if (ctx->debug) {
+        device_info.enabledLayerCount = ctx->layerc;
+        device_info.ppEnabledLayerNames = ctx->layerv;
+    } else {
+        device_info.enabledLayerCount = 0;
+    }
+
+    VkDevice device;
+    ctx->device = device;
+
+    if (vkCreateDevice(
+            ctx->physical_device, &device_info, NULL, &ctx->device) !=
+        VK_SUCCESS) {
+        fprintf(stderr, "Failed to create a logical device!");
+        exit(1);
+    }
+    vkGetDeviceQueue(ctx->device, ctx->queues.gfx, 0, &ctx->gfx_queue);
 }

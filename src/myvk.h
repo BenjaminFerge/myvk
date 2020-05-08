@@ -22,6 +22,8 @@ typedef struct myvk_ctx {
     const char** extv;
     VkPhysicalDevice physical_device;
     myvk_qfamilies queues;
+    VkDevice device;
+    VkQueue gfx_queue;
 } myvk_ctx;
 
 myvk_ctx* myvk_init();
@@ -47,5 +49,7 @@ void myvk_init_window(myvk_ctx* ctx);
 void myvk_init_vulkan(myvk_ctx* ctx);
 
 void myvk_pick_physical_device(myvk_ctx* ctx);
+
+void myvk_create_logical_device(myvk_ctx* ctx);
 
 #endif // MYVK_MYVK_H
