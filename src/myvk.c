@@ -126,6 +126,7 @@ void myvk_init_vulkan(myvk_ctx* ctx)
 {
     myvk_create_inst(ctx);
     myvk_setup_debug_messenger(ctx);
+    myvk_create_surface(ctx);
     myvk_pick_physical_device(ctx);
     myvk_create_logical_device(ctx);
 }
@@ -170,6 +171,7 @@ void myvk_end(myvk_ctx* ctx)
 void myvk_free(myvk_ctx* ctx)
 {
     vkDestroyDevice(ctx->device, NULL);
+    vkDestroySurfaceKHR(ctx->inst, ctx->surface, NULL);
     if (ctx->debug)
         myvk_destroy_debug_messenger(ctx->inst, ctx->messenger, NULL);
     vkDestroyInstance(ctx->inst, NULL);
@@ -234,4 +236,13 @@ void myvk_create_logical_device(myvk_ctx* ctx)
         exit(1);
     }
     vkGetDeviceQueue(ctx->device, ctx->queues.gfx, 0, &ctx->gfx_queue);
+}
+
+void myvk_create_surface(myvk_ctx* ctx)
+{
+    if (glfwCreateWindowSurface(ctx->inst, ctx->window, NULL, &ctx->surface) !=
+        VK_SUCCESS) {
+        fprintf(stderr, "Failed to create window surface!");
+        exit(0);
+    }
 }
