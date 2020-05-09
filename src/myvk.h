@@ -2,13 +2,9 @@
 #define MYVK_MYVK_H
 
 #define GLFW_INCLUDE_VULKAN
+#include "util.h"
 #include <GLFW/glfw3.h>
 #include <stdbool.h>
-
-typedef struct myvk_qfamilies {
-    uint32_t gfx;
-    bool has_gfx;
-} myvk_qfamilies;
 
 typedef struct myvk_ctx {
     GLFWwindow* window;
@@ -21,10 +17,10 @@ typedef struct myvk_ctx {
     uint32_t extc;
     const char** extv;
     VkPhysicalDevice physical_device;
-    myvk_qfamilies queues;
     VkDevice device;
     VkQueue gfx_queue;
     VkSurfaceKHR surface;
+    VkQueue present_queue;
 } myvk_ctx;
 
 myvk_ctx* myvk_init();

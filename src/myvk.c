@@ -151,7 +151,6 @@ myvk_ctx* myvk_init()
     myvk_init_window(ctx);
 
     ctx->physical_device = VK_NULL_HANDLE;
-    ctx->queues.has_gfx = false;
     myvk_init_vulkan(ctx);
     return ctx;
 }
@@ -184,7 +183,7 @@ void myvk_pick_physical_device(myvk_ctx* ctx)
 {
     uint32_t dc = 0;
     VkPhysicalDevice* dv = myvk_available_phyiscal_devices(ctx->inst, &dc);
-    int idx = myvk_prefer_discrete_gpu(dc, dv);
+    int idx = myvk_prefer_discrete_gpu(dc, dv, ctx->surface);
     if (idx != -1) {
         VkPhysicalDevice gpu = dv[idx];
         ctx->physical_device = gpu;
@@ -195,27 +194,46 @@ void myvk_pick_physical_device(myvk_ctx* ctx)
     }
 
     if (ctx->physical_device == VK_NULL_HANDLE) {
-        fprintf(stderr, "Failed to find any suitable GPU!");
+        fprintf(stderr, "Failed to find any suitable GPU!\n");
         exit(0);
     }
 }
 
 void myvk_create_logical_device(myvk_ctx* ctx)
 {
-    myvk_qfamilies indices = find_qfamilies(ctx->physical_device);
+    myvk_qfamilies qfamilies =
+        myvk_find_qfamilies(ctx->physical_device, ctx->surface);
 
-    VkDeviceQueueCreateInfo qinfo = {};
-    qinfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    qinfo.queueFamilyIndex = indices.gfx;
-    qinfo.queueCount = 1;
+    uint32_t uniqc;
+    if (qfamilies.gfx == qfamilies.present)
+        uniqc = 1;
+    else
+        uniqc = 2;
+
+    uint32_t* uniqv = malloc(uniqc * sizeof(uint32_t));
+    uniqv[0] = qfamilies.gfx;
+    if (uniqc == 2) {
+        uniqv[1] = qfamilies.present;
+    }
+
+    VkDeviceQueueCreateInfo* qinfos =
+        malloc(uniqc * sizeof(VkDeviceQueueCreateInfo));
     float prio = 1.0f;
-    qinfo.pQueuePriorities = &prio;
+    for (uint32_t i = 0; i < uniqc; ++i) {
+        uint32_t idx = uniqv[i];
+        VkDeviceQueueCreateInfo qinfo = {};
+        qinfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        qinfo.queueFamilyIndex = idx;
+        qinfo.queueCount = 1;
+        qinfo.pQueuePriorities = &prio;
+        qinfos[i] = qinfo;
+    }
 
     VkDeviceCreateInfo device_info = {};
     VkPhysicalDeviceFeatures features = {};
     device_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    device_info.pQueueCreateInfos = &qinfo;
-    device_info.queueCreateInfoCount = 1;
+    device_info.pQueueCreateInfos = qinfos;
+    device_info.queueCreateInfoCount = uniqc;
     device_info.pEnabledFeatures = &features;
     device_info.enabledExtensionCount = 0;
 
@@ -232,17 +250,17 @@ void myvk_create_logical_device(myvk_ctx* ctx)
     if (vkCreateDevice(
             ctx->physical_device, &device_info, NULL, &ctx->device) !=
         VK_SUCCESS) {
-        fprintf(stderr, "Failed to create a logical device!");
+        fprintf(stderr, "Failed to create a logical device!\n");
         exit(1);
     }
-    vkGetDeviceQueue(ctx->device, ctx->queues.gfx, 0, &ctx->gfx_queue);
+    vkGetDeviceQueue(ctx->device, qfamilies.gfx, 0, &ctx->gfx_queue);
 }
 
 void myvk_create_surface(myvk_ctx* ctx)
 {
     if (glfwCreateWindowSurface(ctx->inst, ctx->window, NULL, &ctx->surface) !=
         VK_SUCCESS) {
-        fprintf(stderr, "Failed to create window surface!");
+        fprintf(stderr, "Failed to create window surface!\n");
         exit(0);
     }
 }

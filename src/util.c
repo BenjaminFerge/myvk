@@ -119,7 +119,7 @@ myvk_not_found_layers(const char** layers, uint32_t layerc, uint32_t* count)
     return nfoundv;
 }
 
-bool myvk_device_suitable(VkPhysicalDevice device)
+bool myvk_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface)
 {
     VkPhysicalDeviceProperties props;
     VkPhysicalDeviceFeatures features;
@@ -134,8 +134,10 @@ bool myvk_device_suitable(VkPhysicalDevice device)
               VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
 #endif
 
-    myvk_qfamilies families = find_qfamilies(device);
-    return type_ok && features.geometryShader && families.has_gfx;
+    myvk_qfamilies families = myvk_find_qfamilies(device, surface);
+
+    return type_ok && features.geometryShader &&
+           myvk_qfamilies_complete(&families);
 }
 
 VkPhysicalDevice* myvk_available_phyiscal_devices(VkInstance inst,
@@ -189,7 +191,9 @@ void myvk_print_physical_device(VkPhysicalDevice gpu)
            myvk_physical_device_type_str(props.deviceType));
 }
 
-int myvk_prefer_discrete_gpu(int gpuc, VkPhysicalDevice* gpuv)
+int myvk_prefer_discrete_gpu(int gpuc,
+                             VkPhysicalDevice* gpuv,
+                             VkSurfaceKHR surface)
 {
     int idx = -1;
     for (int i = 0; i < gpuc; ++i) {
@@ -199,8 +203,8 @@ int myvk_prefer_discrete_gpu(int gpuc, VkPhysicalDevice* gpuv)
         vkGetPhysicalDeviceProperties(gpu, &props);
         vkGetPhysicalDeviceFeatures(gpu, &features);
 
-        if (!myvk_device_suitable(gpu)) {
-            return -1;
+        if (!myvk_device_suitable(gpu, surface)) {
+            continue;
         }
         if (props.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
             return i;
@@ -210,25 +214,44 @@ int myvk_prefer_discrete_gpu(int gpuc, VkPhysicalDevice* gpuv)
     return idx;
 }
 
-myvk_qfamilies find_qfamilies(VkPhysicalDevice gpu)
+myvk_qfamilies myvk_find_qfamilies(VkPhysicalDevice gpu, VkSurfaceKHR surface)
 {
     myvk_qfamilies families;
     families.has_gfx = false;
+    families.has_present = false;
 
     uint32_t count = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(gpu, &count, NULL);
 
     VkQueueFamilyProperties props[count];
-    vkGetPhysicalDeviceQueueFamilyProperties(gpu, &count, props);
+    vkGetPhysicalDeviceQueueFamilyProperties(gpu, &count, &props);
 
-    int i = 0;
-    for (i = 0; i < count; ++i) {
+    VkBool32 wsi = false;
+    uint32_t i = 0;
+    bool ok = false;
+    while (i < count && !ok) {
         if (props[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
             families.gfx = i;
             families.has_gfx = true;
-            break;
         }
+
+        vkGetPhysicalDeviceSurfaceSupportKHR(gpu, i, surface, &wsi);
+        if (wsi) {
+            families.present = i;
+            families.has_present = true;
+        }
+        ok = myvk_qfamilies_complete(&families);
+        ++i;
+    }
+    if (!ok) {
+        fprintf(stderr, "Cannot complete queue families!\n");
+        exit(1);
     }
 
     return families;
+}
+
+bool myvk_qfamilies_complete(myvk_qfamilies* families)
+{
+    return families->has_gfx && families->has_present;
 }
