@@ -119,7 +119,35 @@ myvk_not_found_layers(const char** layers, uint32_t layerc, uint32_t* count)
     return nfoundv;
 }
 
-bool myvk_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface)
+bool myvk_device_extension_support(VkPhysicalDevice device,
+                                   uint32_t reqc,
+                                   const char** reqv)
+{
+    uint32_t extc;
+    vkEnumerateDeviceExtensionProperties(device, NULL, &extc, NULL);
+
+    VkExtensionProperties extv[extc];
+    vkEnumerateDeviceExtensionProperties(device, NULL, &extc, extv);
+
+    uint32_t miss = reqc;
+
+    for (uint32_t i = 0; i < extc; ++i) {
+        VkExtensionProperties ext = extv[i];
+        for (uint32_t j = 0; j < reqc; ++j) {
+            const char* req = reqv[j];
+            if (strcmp(req, ext.extensionName) == 0) {
+                --miss;
+            }
+        }
+    }
+
+    return miss == 0;
+}
+
+bool myvk_device_suitable(VkPhysicalDevice device,
+                          VkSurfaceKHR surface,
+                          uint32_t extc,
+                          const char** extv)
 {
     VkPhysicalDeviceProperties props;
     VkPhysicalDeviceFeatures features;
@@ -137,7 +165,8 @@ bool myvk_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface)
     myvk_qfamilies families = myvk_find_qfamilies(device, surface);
 
     return type_ok && features.geometryShader &&
-           myvk_qfamilies_complete(&families);
+           myvk_qfamilies_complete(&families) &&
+           myvk_device_extension_support(device, extc, extv);
 }
 
 VkPhysicalDevice* myvk_available_phyiscal_devices(VkInstance inst,
@@ -193,7 +222,9 @@ void myvk_print_physical_device(VkPhysicalDevice gpu)
 
 int myvk_prefer_discrete_gpu(int gpuc,
                              VkPhysicalDevice* gpuv,
-                             VkSurfaceKHR surface)
+                             VkSurfaceKHR surface,
+                             uint32_t extc,
+                             const char** extv)
 {
     int idx = -1;
     for (int i = 0; i < gpuc; ++i) {
@@ -203,7 +234,7 @@ int myvk_prefer_discrete_gpu(int gpuc,
         vkGetPhysicalDeviceProperties(gpu, &props);
         vkGetPhysicalDeviceFeatures(gpu, &features);
 
-        if (!myvk_device_suitable(gpu, surface)) {
+        if (!myvk_device_suitable(gpu, surface, extc, extv)) {
             continue;
         }
         if (props.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {

@@ -35,14 +35,23 @@ myvk_not_found_layers(const char** layers, uint32_t layerc, uint32_t* count);
 
 VkLayerProperties* myvk_available_layers(uint32_t* count);
 
-bool myvk_device_suitable(VkPhysicalDevice device, VkSurfaceKHR surface);
+bool myvk_device_extension_support(VkPhysicalDevice device,
+                                   uint32_t reqc,
+                                   const char** reqv);
+
+bool myvk_device_suitable(VkPhysicalDevice device,
+                          VkSurfaceKHR surface,
+                          uint32_t extc,
+                          const char** extv);
 
 VkPhysicalDevice* myvk_available_phyiscal_devices(VkInstance inst,
                                                   uint32_t* count);
 
 int myvk_prefer_discrete_gpu(int gpuc,
                              VkPhysicalDevice* gpuv,
-                             VkSurfaceKHR surface);
+                             VkSurfaceKHR surface,
+                             uint32_t extc,
+                             const char** extv);
 
 const char* myvk_physical_device_type_str(VkPhysicalDeviceType type);
 

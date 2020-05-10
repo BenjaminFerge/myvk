@@ -142,6 +142,14 @@ myvk_ctx* myvk_init()
     ctx->layerv[0] = malloc(strlen(layer1) * sizeof(char));
     strcpy(ctx->layerv[0], layer1);
 
+    uint32_t device_extc = 1;
+    const char* swext =
+        malloc(strlen(VK_KHR_SWAPCHAIN_EXTENSION_NAME) * sizeof(char));
+    const char** device_extv = malloc(device_extc * sizeof(swext));
+    device_extv[0] = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
+    ctx->device_extc = device_extc;
+    ctx->device_extv = device_extv;
+
 #ifndef NDEBUG
     ctx->debug = true;
 #else
@@ -183,7 +191,8 @@ void myvk_pick_physical_device(myvk_ctx* ctx)
 {
     uint32_t dc = 0;
     VkPhysicalDevice* dv = myvk_available_phyiscal_devices(ctx->inst, &dc);
-    int idx = myvk_prefer_discrete_gpu(dc, dv, ctx->surface);
+    int idx = myvk_prefer_discrete_gpu(
+        dc, dv, ctx->surface, ctx->device_extc, ctx->device_extv);
     if (idx != -1) {
         VkPhysicalDevice gpu = dv[idx];
         ctx->physical_device = gpu;
@@ -235,7 +244,8 @@ void myvk_create_logical_device(myvk_ctx* ctx)
     device_info.pQueueCreateInfos = qinfos;
     device_info.queueCreateInfoCount = uniqc;
     device_info.pEnabledFeatures = &features;
-    device_info.enabledExtensionCount = 0;
+    device_info.enabledExtensionCount = ctx->device_extc;
+    device_info.ppEnabledExtensionNames = ctx->device_extv;
 
     if (ctx->debug) {
         device_info.enabledLayerCount = ctx->layerc;

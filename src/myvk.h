@@ -16,6 +16,8 @@ typedef struct myvk_ctx {
     int layerc;
     uint32_t extc;
     const char** extv;
+    uint32_t device_extc;
+    const char** device_extv;
     VkPhysicalDevice physical_device;
     VkDevice device;
     VkQueue gfx_queue;
