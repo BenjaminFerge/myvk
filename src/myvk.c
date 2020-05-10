@@ -119,7 +119,7 @@ void myvk_init_window(myvk_ctx* ctx)
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-    ctx->window = glfwCreateWindow(800, 600, "myvk", NULL, NULL);
+    ctx->window = glfwCreateWindow(ctx->w, ctx->h, "myvk", NULL, NULL);
 }
 
 void myvk_init_vulkan(myvk_ctx* ctx)
@@ -129,11 +129,14 @@ void myvk_init_vulkan(myvk_ctx* ctx)
     myvk_create_surface(ctx);
     myvk_pick_physical_device(ctx);
     myvk_create_logical_device(ctx);
+    myvk_create_swapchain(ctx);
 }
 
 myvk_ctx* myvk_init()
 {
     myvk_ctx* ctx = malloc(sizeof(myvk_ctx));
+    ctx->w = 800;
+    ctx->h = 600;
     ctx->exit = false;
     ctx->layerc = 1;
     ctx->layerv = malloc(ctx->layerc * sizeof(char*));
@@ -273,4 +276,65 @@ void myvk_create_surface(myvk_ctx* ctx)
         fprintf(stderr, "Failed to create window surface!\n");
         exit(0);
     }
+}
+
+void myvk_create_swapchain(myvk_ctx* ctx)
+{
+    // FIXME!!!
+    myvk_swapchain_details details =
+        myvk_qry_swapchain(ctx->physical_device, ctx->surface);
+
+    VkSurfaceFormatKHR surfaceFormat =
+        myvk_choose_surface_format(details.formatc, details.formatv);
+    VkPresentModeKHR presentMode =
+        myvk_choose_present_mode(details.modec, details.modev);
+    VkExtent2D extent = myvk_choose_swap_extent(&details.caps, ctx->w, ctx->h);
+
+    uint32_t imgc = details.caps.minImageCount + 1;
+    if (details.caps.maxImageCount > 0 && imgc > details.caps.maxImageCount) {
+        imgc = details.caps.maxImageCount;
+    }
+
+    VkSwapchainCreateInfoKHR createInfo = {};
+    createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    createInfo.surface = ctx->surface;
+    createInfo.minImageCount = imgc;
+    createInfo.imageFormat = surfaceFormat.format;
+    createInfo.imageColorSpace = surfaceFormat.colorSpace;
+    createInfo.imageExtent = extent;
+    createInfo.imageArrayLayers = 1;
+    createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+    myvk_qfamilies indices =
+        myvk_find_qfamilies(ctx->physical_device, ctx->surface);
+    uint32_t queueFamilyIndices[] = {indices.gfx, indices.present};
+
+    if (indices.gfx != indices.present) {
+        createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+        createInfo.queueFamilyIndexCount = 2;
+        createInfo.pQueueFamilyIndices = queueFamilyIndices;
+    } else {
+        createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    }
+
+    createInfo.preTransform = details.caps.currentTransform;
+    createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    createInfo.presentMode = presentMode;
+    createInfo.clipped = VK_TRUE;
+
+    createInfo.oldSwapchain = VK_NULL_HANDLE;
+
+    if (vkCreateSwapchainKHR(ctx->device, &createInfo, NULL, &ctx->swapchain) !=
+        VK_SUCCESS) {
+        fprintf(stderr, "Failed to create swapchain!");
+        exit(1);
+    }
+
+    vkGetSwapchainImagesKHR(ctx->device, ctx->swapchain, &imgc, NULL);
+    ctx->swapchain_imgv = malloc(imgc * sizeof(VkImage));
+    vkGetSwapchainImagesKHR(
+        ctx->device, ctx->swapchain, &imgc, ctx->swapchain_imgv);
+
+    ctx->swapchain_format = surfaceFormat.format;
+    ctx->swapchain_extent = extent;
 }

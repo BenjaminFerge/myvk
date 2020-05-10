@@ -318,3 +318,55 @@ bool myvk_swapchain_ok(myvk_swapchain_details* details)
 {
     return details->formatc > 0 && details->modec > 0;
 }
+
+VkSurfaceFormatKHR myvk_choose_surface_format(uint32_t formatc,
+                                              VkSurfaceFormatKHR* formatv)
+{
+    if (formatc <= 0) {
+        fprintf(stderr, "No available surface formats!");
+        exit(1);
+    }
+    // Find the best if it's available
+    for (uint32_t i = 0; i < formatc; ++i) {
+        VkSurfaceFormatKHR f = formatv[i];
+        if (f.format == VK_FORMAT_B8G8R8A8_SRGB &&
+            f.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+            return f;
+        }
+    }
+    return formatv[0];
+}
+
+VkPresentModeKHR myvk_choose_present_mode(uint32_t modec,
+                                          VkPresentModeKHR* modev)
+{
+    for (uint32_t i = 0; i < modec; ++i) {
+        VkPresentModeKHR mode = modev[i];
+        if (mode == VK_PRESENT_MODE_MAILBOX_KHR)
+            return mode;
+    }
+
+    // VK_PRESENT_MODE_FIFO_KHR mode is guaranteed to be available
+    return VK_PRESENT_MODE_FIFO_KHR;
+}
+
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
+
+VkExtent2D
+myvk_choose_swap_extent(VkSurfaceCapabilitiesKHR* caps, uint32_t w, uint32_t h)
+{
+    if (caps->currentExtent.width != UINT32_MAX) {
+        return caps->currentExtent;
+    } else {
+        VkExtent2D actual = {w, h};
+
+        actual.width = MAX(caps->minImageExtent.width,
+                           MIN(caps->maxImageExtent.width, actual.width));
+
+        actual.height = MAX(caps->minImageExtent.height,
+                            MIN(caps->maxImageExtent.height, actual.height));
+
+        return actual;
+    }
+}

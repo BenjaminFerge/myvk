@@ -72,6 +72,15 @@ void myvk_print_physical_device(VkPhysicalDevice gpu);
 
 myvk_qfamilies myvk_find_qfamilies(VkPhysicalDevice gpu, VkSurfaceKHR surface);
 
+VkSurfaceFormatKHR myvk_choose_surface_format(uint32_t formatc,
+                                              VkSurfaceFormatKHR* formatv);
+
+VkPresentModeKHR myvk_choose_present_mode(uint32_t modec,
+                                          VkPresentModeKHR* modev);
+
+VkExtent2D
+myvk_choose_swap_extent(VkSurfaceCapabilitiesKHR* caps, uint32_t w, uint32_t h);
+
 VKAPI_ATTR VkBool32 VKAPI_CALL
 myvk_debugcb(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
              VkDebugUtilsMessageTypeFlagsEXT messageType,

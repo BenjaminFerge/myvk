@@ -8,6 +8,8 @@
 
 typedef struct myvk_ctx {
     GLFWwindow* window;
+    uint32_t w;
+    uint32_t h;
     bool exit;
     bool debug;
     VkInstance inst;
@@ -23,6 +25,11 @@ typedef struct myvk_ctx {
     VkQueue gfx_queue;
     VkSurfaceKHR surface;
     VkQueue present_queue;
+    VkSwapchainKHR swapchain;
+    VkImage* swapchain_imgv;
+    uint32_t swapchain_imgc;
+    VkFormat swapchain_format;
+    VkExtent2D swapchain_extent;
 } myvk_ctx;
 
 myvk_ctx* myvk_init();
@@ -52,5 +59,7 @@ void myvk_pick_physical_device(myvk_ctx* ctx);
 void myvk_create_logical_device(myvk_ctx* ctx);
 
 void myvk_create_surface(myvk_ctx* ctx);
+
+void myvk_create_swapchain(myvk_ctx* ctx);
 
 #endif // MYVK_MYVK_H
