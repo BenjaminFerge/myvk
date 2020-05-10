@@ -13,6 +13,19 @@ typedef struct myvk_qfamilies {
     bool has_present;
 } myvk_qfamilies;
 
+typedef struct myvk_swapchain_details {
+    VkSurfaceCapabilitiesKHR caps;
+    VkSurfaceFormatKHR* formatv;
+    uint32_t formatc;
+    VkPresentModeKHR* modev;
+    uint32_t modec;
+} myvk_swapchain_details;
+
+myvk_swapchain_details myvk_qry_swapchain(VkPhysicalDevice device,
+                                          VkSurfaceKHR surface);
+
+bool myvk_swapchain_ok(myvk_swapchain_details* details);
+
 bool myvk_qfamilies_complete(myvk_qfamilies* families);
 
 VkResult

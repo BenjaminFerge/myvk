@@ -163,10 +163,12 @@ bool myvk_device_suitable(VkPhysicalDevice device,
 #endif
 
     myvk_qfamilies families = myvk_find_qfamilies(device, surface);
+    myvk_swapchain_details details = myvk_qry_swapchain(device, surface);
 
     return type_ok && features.geometryShader &&
            myvk_qfamilies_complete(&families) &&
-           myvk_device_extension_support(device, extc, extv);
+           myvk_device_extension_support(device, extc, extv) &&
+           myvk_swapchain_ok(&details);
 }
 
 VkPhysicalDevice* myvk_available_phyiscal_devices(VkInstance inst,
@@ -285,4 +287,34 @@ myvk_qfamilies myvk_find_qfamilies(VkPhysicalDevice gpu, VkSurfaceKHR surface)
 bool myvk_qfamilies_complete(myvk_qfamilies* families)
 {
     return families->has_gfx && families->has_present;
+}
+
+myvk_swapchain_details myvk_qry_swapchain(VkPhysicalDevice device,
+                                          VkSurfaceKHR surface)
+{
+    myvk_swapchain_details details;
+
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.caps);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(
+        device, surface, &details.formatc, NULL);
+    if (details.formatc > 0) {
+        details.formatv = malloc(details.formatc * sizeof(VkSurfaceFormatKHR));
+        vkGetPhysicalDeviceSurfaceFormatsKHR(
+            device, surface, &details.formatc, details.formatv);
+    }
+
+    vkGetPhysicalDeviceSurfacePresentModesKHR(
+        device, surface, &details.modec, NULL);
+    if (details.modec > 0) {
+        details.modev = malloc(details.modec * sizeof(VkPresentModeKHR));
+        vkGetPhysicalDeviceSurfacePresentModesKHR(
+            device, surface, &details.modec, details.modev);
+    }
+
+    return details;
+}
+
+bool myvk_swapchain_ok(myvk_swapchain_details* details)
+{
+    return details->formatc > 0 && details->modec > 0;
 }
