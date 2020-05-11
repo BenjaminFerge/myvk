@@ -280,7 +280,6 @@ void myvk_create_surface(myvk_ctx* ctx)
 
 void myvk_create_swapchain(myvk_ctx* ctx)
 {
-    // FIXME!!!
     myvk_swapchain_details details =
         myvk_qry_swapchain(ctx->physical_device, ctx->surface);
 

@@ -165,10 +165,15 @@ bool myvk_device_suitable(VkPhysicalDevice device,
     myvk_qfamilies families = myvk_find_qfamilies(device, surface);
     myvk_swapchain_details details = myvk_qry_swapchain(device, surface);
 
-    return type_ok && features.geometryShader &&
-           myvk_qfamilies_complete(&families) &&
-           myvk_device_extension_support(device, extc, extv) &&
-           myvk_swapchain_ok(&details);
+    bool swapchain_ok = myvk_swapchain_ok(&details);
+    bool has_geometry_shader = features.geometryShader && true;
+    bool ext_sup = myvk_device_extension_support(device, extc, extv);
+    bool fam_ok = myvk_qfamilies_complete(&families);
+    bool suitable = type_ok && features.geometryShader &&
+                    myvk_qfamilies_complete(&families) &&
+                    myvk_device_extension_support(device, extc, extv) &&
+                    myvk_swapchain_ok(&details);
+    return suitable;
 }
 
 VkPhysicalDevice* myvk_available_phyiscal_devices(VkInstance inst,
@@ -292,7 +297,7 @@ bool myvk_qfamilies_complete(myvk_qfamilies* families)
 myvk_swapchain_details myvk_qry_swapchain(VkPhysicalDevice device,
                                           VkSurfaceKHR surface)
 {
-    myvk_swapchain_details details;
+    myvk_swapchain_details details = {};
 
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.caps);
     vkGetPhysicalDeviceSurfaceFormatsKHR(
